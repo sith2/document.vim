@@ -5,5 +5,5 @@ source doc_helper_fun.vim
 source doc_fun.vim
 source doc_class_init_fun.vim
 
-source assist_func.vim
-source kepmaps.vim
+source assist_fun.vim
+source kepmap.vim
