@@ -48,7 +48,6 @@ function! ProcessMostNestedExp(expression) dict
 
 
     call doc["pub_set_new_tmp_class"](0)
-    call doc["pub_set_new_tmp_class"](1)
 endfunction
 
 function! ClassNameCheck(selector) dict
