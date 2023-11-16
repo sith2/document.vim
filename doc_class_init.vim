@@ -26,13 +26,25 @@ function! ClassSetter(class_name, class_lines) dict
     let self['class']['prv_repo'][a:class_name] = a:class_lines
 endfunction
 
-function! TmpClassSetter(tmp_class_name, tmp_class_lines, is_tmp) dict
+function! TmpClassSetter(tmp_class_name, tmp_class_lines, is_volatile) dict
     "*- is_tmp: 0=normal class, 1=tmp class, 2=tmp volatile class -*
     if is_tmp == 0
         let self['class']['prv_repo']['tmp'][tmp_class_name] = tmp_class_lines
     elseif is_tmp == 1
         let self['class']['prv_repo']['tmp']['volatile'][tmp_class_name] = tmp_class_lines
     endif
+endfunction
+
+function! SetNewTmpClass(is_volatile) dict
+    let new_tmp_class_name = ""
+    if a:is_volatile
+        let new_tmp_class_name = new_tmp_class_name . (len(keys(self['class']['prv_repo']['tmp']['volatile'])) + 1)
+        let self['class']['prv_repo']['tmp']['volatile'][new_tmp_class_name]
+    else
+        let new_tmp_class_name = new_tmp_class_name . (len(keys(self['class']['prv_repo']['tmp'])) + 1)
+        let self['class']['prv_repo']['tmp'][new_tmp_class_name]
+    endif
+    return new_tmp_class_name
 endfunction
 
 function! ClassNameCheck(class_name)
@@ -43,17 +55,19 @@ function! ClassNameCheck(class_name)
     endif
 endfunction
 
-function! CreateTmpFolder(is_tmp, is_volatile)
-    let self['class']['prv_repo']['tmp'] = {}
-    let self['class']['prv_repo']['tmp']['volatile'] = {}
+function! And(lines1, lines2)
+    return filter(copy(a:lines1), {_, v -> index(a:lines2, v) != -1})
 endfunction
 
-function! RemoveTmpFolder(is_tmp, is_volatile)
-    call remove(self['class']['prv_repo'], 'tmp')
-endfunction
-
-function! SetTmpClassLines(tmp_class_name, tmp_class_lines)
-    let self['class']['prv_repo']['tmp'][a:tmp_class_name] = a:tmp_class_lines
+function! Or(lines1, lines2)
+    let tmp_dict = {}
+    for line in a:lines1
+        let tmp_dict[line] = ""
+    endfor
+    for line in a:lines2
+        let tmp_dict[line] = ""
+    endfor
+    return sort(map(keys(tmp_dict), 'str2nr(v:val)'), {v1, v2 -> v1 - v2})
 endfunction
 
 let doc = {
@@ -62,12 +76,14 @@ let doc = {
 \           "sample": {
 \               "def": "",
 \               "lines": []
+\           },
+\           "tmp": {
 \           }
 \       }
 \   }
 \}
 
-let [doc["pub_class_setter"], doc["pub_class_getter], doc["pub_tmp_class_setter"], doc["pub_tmp_class_getter]] = [
+let [doc["pub_class_setter"], doc["pub_class_getter"], doc["pub_tmp_class_setter"], doc["pub_tmp_class_getter"]] = [
 \    function("ClassSetter"), function("ClassGetter"), function("TmpClassSetter"), function("TmpClassGetter")
 \]
 
@@ -75,10 +91,14 @@ let [doc["pub_class_name_check"]] = [
 \    function("ClassNameCheck")
 \]
 
-let [doc["pub_create_tmp_folder"], doc["pub_remove_tmp_folder] = [
+let [doc["pub_set_new_tmp_class"]] = [
+\    function("SetNewTmpClass")
+\]
+
+let [doc["pub_create_tmp_folder"], doc["pub_remove_tmp_folder"] = [
 \    function("CreateTmpFolder"), function("RemoveTmpFolder")
 \]
 
-let [doc["pub_is_exists_class_name"], doc["pub_assign_tmp_class_name], doc["pub_class_name_setter"]] = [
+let [doc["pub_is_exists_class_name"], doc["pub_assign_tmp_class_name"], doc["pub_class_name_setter"]] = [
 \    function("IsExistsClassName"), function("AssignTmpClassName"), function("Select"), function("Edit")
 \]

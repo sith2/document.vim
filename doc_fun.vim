@@ -41,18 +41,42 @@ endfunction
 
 function! DefineClass() dict
     let class_name = input("Defining Class. Please enter Class Name.\n")
+    if class_name =~ '^\s*$'
+        echo "\n"
+        throw "Class Name is empty"
+    endif
     if class_name =~ '^\d'
         echo "\n"
         throw "Class Name cannot start with a number"
     endif
+
     let class_def = input("Please enter RegExp for this Class:-\n)
     regexp_checking(class_def)
-    let class_def_cmd = "g/" . class_def . "/"
-    execute class_def_cmd
+
+    try
+        let class_def_cmd = "g`" . class_def . "`"
+        execute class_def_cmd
+    catch
+        echo "\n"
+        throw "Invalid Pattern Format"
+    endtry
+
+    let class_lines = []
+    for line_number in range(1, line('$'))
+        if getline(line_number) =~ class_def
+            call add(class_lines, line_number)
+        endif
+    endfor
+
+    if len(class_lines) == 0 
+        echo "\n"
+        throw "This Class Definition has 0 Matches"
+    endif
+
     let self['class']['prv_repo'][class_name] = {}
     let self['class']['prv_repo'][class_name]['def'] = class_def
-    let self['class']['prv_repo'][class_name]['lines'] = 
-    
+    let self['class']['prv_repo'][class_name]['lines'] = class_lines
+
 endfunction
 
 function! Select() dict
