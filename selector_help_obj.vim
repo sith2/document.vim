@@ -6,7 +6,6 @@ endfunction
 function! ProcessExp(selector) dict
     let exp = a:selector
 
-
     let [match_exp, start_idx, end_idx] = matchstrpos(exp, '(!?\w\+\([&&\|||]!?\w\+\)*)', 0)
     while match_exp != ''
         let tmp_class_name = self["prv_process_most_nested_exp"](match_exp)
@@ -22,8 +21,10 @@ function! ProcessMostNestedExp(expression) dict
 
     "*- first handle NOTs -*
     let [match_exp, start_idx, end_idx] = matchstrpos(exp, '!\w\+', 0)
+
+    call doc["pub_create_tmp_class"](1)
     while match_exp != ''
-        let tmp_class_name = self["prv_process_most_nested_exp"](match_exp)
+        let tmp_class_name = doc["pub_set_new_tmp_class"](1)
         let exp = strpart(exp, 0, start_idx) . tmp_class_name . strpart(exp, start_idx, end_idx)
         let [match_exp, start_idx, end_idx] = matchstrpos(exp, '!\w\+', end_idx)
     endwhile
@@ -43,6 +44,7 @@ function! ProcessMostNestedExp(expression) dict
         let exp = strpart(exp, 0, start_idx) . tmp_class_name . strpart(exp, start_idx, end_idx)
         let [match_exp, start_idx, end_idx] = matchstrpos(exp, '\w\+||\w\+', end_idx)
     endwhile
+    call doc["pub_clear_tmp_class"](1)
 
 
     call doc["pub_set_new_tmp_class"](0)
@@ -100,6 +102,26 @@ function! UnbalancedBracketsCheck(selector) dict
     endif
 endfunction
 
+function! Not(lines)
+    let all_lines = range(1, line('$'))
+    let intersection = filter(copy(a:list1), {_, v -> index(a:list2, v) != -1})
+    return filter(copy(union), {_, v -> index(intersection, v) == -1})
+endfunction
+
+function! And(lines1, lines2)
+    return filter(copy(a:lines1), {_, v -> index(a:lines2, v) != -1})
+endfunction
+
+function! Or(lines1, lines2)
+    let tmp_dict = {}
+    for line in a:lines1
+        let tmp_dict[line] = ""
+    endfor
+    for line in a:lines2
+        let tmp_dict[line] = ""
+    endfor
+    return sort(map(keys(tmp_dict), 'str2nr(v:val)'), {v1, v2 -> v1 - v2})
+endfunction
 
 let selector_help_obj = {
 \   "adjacent_group_check": function("AdjacentGroupCheck"),
@@ -108,4 +130,7 @@ let selector_help_obj = {
 \   "debracket_lone_groups": function("DebracketLoneGroups"),
 \   "process_exp": function("ProcessExp"),
 \   "prv_process_most_nested_exp": function("ProcessMostNestedExp"),
+\   "prv_and": function("And"),
+\   "prv_or": function("Or"),
+\   "prv_not": function("Not"),
 \}

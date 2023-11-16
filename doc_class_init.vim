@@ -55,21 +55,6 @@ function! ClassNameCheck(class_name)
     endif
 endfunction
 
-function! And(lines1, lines2)
-    return filter(copy(a:lines1), {_, v -> index(a:lines2, v) != -1})
-endfunction
-
-function! Or(lines1, lines2)
-    let tmp_dict = {}
-    for line in a:lines1
-        let tmp_dict[line] = ""
-    endfor
-    for line in a:lines2
-        let tmp_dict[line] = ""
-    endfor
-    return sort(map(keys(tmp_dict), 'str2nr(v:val)'), {v1, v2 -> v1 - v2})
-endfunction
-
 let doc = {
 \   "class": {
 \       "prv_repo": {
