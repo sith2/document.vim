@@ -24,23 +24,44 @@ function! ProcessMostNestedExp(expression) dict
 
     call doc["pub_create_tmp_class"](1)
     while match_exp != ''
-        let tmp_class_name = doc["pub_set_new_tmp_class"](1)
-        let exp = strpart(exp, 0, start_idx) . tmp_class_name . strpart(exp, start_idx, end_idx)
+        let group_class_name = doc["pub_set_new_tmp_class"](1)
+        let volatile_lines = self["prv_not"](doc["pub_class_getter"](group_class_name))
+        let tmp_volatile_class_name = doc["pub_set_new_tmp_class"](volatile_lines, 1)
+
+        let exp = strpart(exp, 0, start_idx) . tmp_volatile_class_name . strpart(exp, start_idx, end_idx)
         let [match_exp, start_idx, end_idx] = matchstrpos(exp, '!\w\+', end_idx)
     endwhile
 
     "*- then handle ANDs -*
     let [match_exp, start_idx, end_idx] = matchstrpos(exp, '\w\+&&\w\+', 0)
     while match_exp != ''
-        let tmp_class_name = self["prv_process_most_nested_exp"](match_exp)
+        let left_group_class_name = doc["pub_set_new_tmp_class"](1)
+        let right_group_class_name = doc["pub_set_new_tmp_class"](1)
+        let volatile_lines = self["prv_and"](
+            doc["pub_class_getter"](left_group_class_name), 
+            doc["pub_class_getter"](right_group_class_name)
+        )
+        let tmp_volatile_class_name = doc["pub_set_new_tmp_class"](volatile_lines, 1)
+
+        let exp = strpart(exp, 0, start_idx) . tmp_volatile_class_name . strpart(exp, start_idx, end_idx)
+
         let exp = strpart(exp, 0, start_idx) . tmp_class_name . strpart(exp, start_idx, end_idx)
-        let [match_exp, start_idx, end_idx] = matchstrpos(exp, '\w\+[&&\|||]\w\+', end_idx)
+        let [match_exp, start_idx, end_idx] = matchstrpos(exp, '\w\+&&\w\+', end_idx)
     endwhile
 
     "*- finally handle ORs -*
     let [match_exp, start_idx, end_idx] = matchstrpos(exp, '\w\+||\w\+', 0)
     while match_exp != ''
-        let tmp_class_name = self["prv_process_most_nested_exp"](match_exp)
+        let left_group_class_name = doc["pub_set_new_tmp_class"](1)
+        let right_group_class_name = doc["pub_set_new_tmp_class"](1)
+        let volatile_lines = self["prv_or"](
+            doc["pub_class_getter"](left_group_class_name), 
+            doc["pub_class_getter"](right_group_class_name)
+        )
+        let tmp_volatile_class_name = doc["pub_set_new_tmp_class"](volatile_lines, 1)
+
+        let exp = strpart(exp, 0, start_idx) . tmp_volatile_class_name . strpart(exp, start_idx, end_idx)
+
         let exp = strpart(exp, 0, start_idx) . tmp_class_name . strpart(exp, start_idx, end_idx)
         let [match_exp, start_idx, end_idx] = matchstrpos(exp, '\w\+||\w\+', end_idx)
     endwhile
@@ -112,11 +133,9 @@ function! And(lines1, lines2)
 endfunction
 
 function! Or(lines1, lines2)
+    let combined_lines = extend(lines1, lines2)
     let tmp_dict = {}
-    for line in a:lines1
-        let tmp_dict[line] = ""
-    endfor
-    for line in a:lines2
+    for line in a:combined_lines
         let tmp_dict[line] = ""
     endfor
     return sort(map(keys(tmp_dict), 'str2nr(v:val)'), {v1, v2 -> v1 - v2})
